@@ -46,8 +46,17 @@ namespace Exiled.CustomItems.API
         /// </summary>
         /// <param name="player">The player to which items will be given.</param>
         /// <param name="newItems">The new items that have to be added to the inventory.</param>
-        public static void ResetInventory(this Player player, List<string> newItems)
+        /// <param name="displayMessage">Indicates a value whether <see cref="CustomItem.ShowPickedUpMessage"/> will be called when the player receives the <see cref="CustomItem"/> or not.</param>
+        public static void ResetInventory(this Player player, List<string> newItems, bool displayMessage = false)
         {
+            foreach (Inventory.SyncItemInfo item in player.Inventory.items)
+            {
+                if (CustomItem.TryGet(item, out CustomItem customItem))
+                {
+                    customItem.InsideInventories.Remove(item.uniq);
+                }
+            }
+
             player.ClearInventory();
 
             foreach (string item in newItems)
@@ -56,12 +65,9 @@ namespace Exiled.CustomItems.API
                 {
                     player.AddItem(parsedItem);
                 }
-                else
+                else if (!CustomItem.TryGive(player, item, displayMessage))
                 {
-                    if (!CustomItem.TryGive(player, item, false))
-                    {
-                        Log.Error($"\"{item}\" is not a valid item name, nor a custom item name.");
-                    }
+                    Log.Debug($"\"{item}\" is not a valid item name, nor a custom item name.", CustomItems.Instance.Config.Debug);
                 }
             }
         }
